@@ -1,0 +1,171 @@
+# LangChain Chat 프로젝트에서 사용된 API 목록
+
+## Streamlit APIs
+
+### 기본 설정
+- st.set_page_config() - 페이지 설정 (제목, 아이콘, 레이아웃)
+- st.title() - 페이지 제목
+- st.header() - 섹션 헤더
+- st.subheader() - 서브섹션 헤더
+- st.caption() - 작은 설명 텍스트
+
+### 레이아웃
+- st.sidebar - 사이드바 컨테이너
+- st.columns() - 컬럼 레이아웃
+- st.divider() - 구분선
+- st.expander() - 펼침/접힘 컨테이너
+- st.container() - 일반 컨테이너
+
+### 입력 위젯
+- st.chat_input() - 채팅 입력창
+- st.text_input() - 텍스트 입력
+- st.text_area() - 여러 줄 텍스트 입력
+- st.selectbox() - 드롭다운 선택
+- st.button() - 버튼
+- st.toggle() - 토글 스위치
+
+### 출력/표시
+- st.markdown() - 마크다운 렌더링
+- st.write() - 범용 출력
+- st.chat_message() - 채팅 메시지 컨테이너
+- st.empty() - 빈 플레이스홀더
+- st.success() - 성공 메시지 (녹색)
+- st.error() - 에러 메시지 (빨간색)
+- st.warning() - 경고 메시지 (노란색)
+- st.info() - 정보 메시지 (파란색)
+- st.spinner() - 로딩 스피너
+
+### Session State
+- st.session_state - 세션 상태 관리
+- st.rerun() - 앱 재실행
+
+## LangChain APIs
+
+### Core - Messages
+- HumanMessage() - 사용자 메시지
+- AIMessage() - AI 응답 메시지
+- SystemMessage() - 시스템 프롬프트 메시지
+
+### Chat Models
+- ChatOpenAI() - OpenAI 챗 모델
+  - model: 모델 이름
+  - temperature: 창의성 조절 (0.0-1.0)
+  - streaming: 스트리밍 모드
+  - api_key: API 키
+- .stream() - 스트리밍 응답 생성
+- .invoke() - 일반 응답 생성
+
+### Community Tools
+- TavilySearchResults() - Tavily 검색 도구
+  - max_results: 최대 결과 수
+  - api_key: API 키
+- .invoke() - 검색 실행
+
+### External Libraries
+- DDGS (from ddgs) - DuckDuckGo 검색
+  - .text() - 텍스트 검색
+  - max_results: 최대 결과 수
+
+## Python 표준 라이브러리
+
+### dotenv
+- load_dotenv() - 환경 변수 로드
+- os.getenv() - 환경 변수 읽기
+
+### datetime
+- datetime.now() - 현재 시간
+- .strftime() - 시간 포맷팅
+
+### uuid
+- uuid.uuid4() - 고유 ID 생성
+
+### typing (메모리에만 사용)
+- isinstance() - 타입 체크
+
+## 데이터 구조
+
+### Session State 구조
+```python
+st.session_state = {
+    "conversations": {
+        "uuid": {
+            "id": str,
+            "title": str,
+            "messages": [HumanMessage, AIMessage, ...],
+            "search_results": {int: str},
+            "system_prompt": str,
+            "created_at": datetime
+        }
+    },
+    "active_conversation_id": str,
+    "selected_model": str,
+    "search_engine": str | None,
+    "llm": ChatOpenAI
+}
+```
+
+### Message Flow
+1. 사용자 입력 → HumanMessage
+2. 검색 활성화 시 → 검색 결과 추가
+3. 시스템 프롬프트 있으면 → SystemMessage 추가
+4. LLM 처리 → AIMessage
+
+## 주요 패턴
+
+### 1. 스트리밍 응답
+```python
+for chunk in llm.stream(messages):
+    full_response += chunk.content
+    placeholder.markdown(full_response + "▌")
+```
+
+### 2. 검색 통합
+```python
+if search_enabled:
+    search_results = search_function(query)
+    augmented_prompt = f"{query}\n\n{search_results}\n\n..."
+    messages = messages + [HumanMessage(content=augmented_prompt)]
+```
+
+### 3. 세션 관리
+```python
+conversations[session_id] = {
+    "messages": [],
+    "search_results": {},
+    ...
+}
+```
+
+### 4. 에러 처리
+```python
+try:
+    result = function()
+    return result, None
+except Exception as e:
+    return None, f"에러: {str(e)}"
+```
+
+## 앱별 사용된 API 요약
+
+### app1.py (기본)
+- Streamlit: 기본 UI, chat_message, chat_input, session_state
+- LangChain: ChatOpenAI, HumanMessage, AIMessage, stream
+
+### app2.py (세션 관리)
+- app1.py 모든 API +
+- uuid.uuid4(), datetime.now()
+- 복잡한 session_state 구조
+
+### app3.py (응답 수정)
+- app1.py 모든 API +
+- Stage 기반 상태 관리
+- text_input, text_area (수정용)
+- expander (검증 UI)
+
+### app4.py (검색 통합)
+- app2.py 모든 API +
+- SystemMessage
+- TavilySearchResults, DDGS
+- st.error(), st.info(), st.spinner()
+- text_area (시스템 프롬프트)
+
