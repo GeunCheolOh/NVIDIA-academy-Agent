@@ -1,6 +1,5 @@
 langchain==1.2.0
 langchain-openai==1.0.0
-langchain-community==0.3.19
 streamlit==1.52.2
 python-dotenv==1.0.0
 tavily-python==0.5.0
